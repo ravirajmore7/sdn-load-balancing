@@ -153,7 +153,7 @@ flowchart LR
     C --> E[Flask Backend]
     D --> E
     F[Fallback Demo Metrics] --> E
-    E --> G[/api/metrics]
+    E --> G["/api/metrics"]
     G --> H[Tailwind Dashboard UI]
     H --> I[Live Cards + Tables + Charts]
     H --> J[Mode Buttons]
