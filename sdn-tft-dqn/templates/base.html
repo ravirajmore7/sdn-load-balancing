@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{% block title %}AI-Powered SDN Load Balancing Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0db9f2",
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#101e22",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
+        }
+
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
+    <div class="relative flex h-auto min-h-screen w-full flex-col">
+        <div class="flex h-full grow flex-col">
+            <header
+                class="flex items-center justify-between whitespace-nowrap border-b border-solid border-white/10 px-6 md:px-10 py-4">
+                <div class="flex items-center gap-4 text-white">
+                    <div class="size-6 text-primary">
+                        <svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <path clip-rule="evenodd"
+                                d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z"
+                                fill="currentColor" fill-rule="evenodd"></path>
+                            <path clip-rule="evenodd"
+                                d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z"
+                                fill="currentColor" fill-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-bold leading-tight tracking-[-0.015em] text-gray-200 dark:text-white">
+                        AI-Powered SDN Load Balancing Dashboard</h2>
+                </div>
+                <button id="liveStatus"
+                    class="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full h-9 px-4 bg-green-500/20 text-green-400 text-sm font-bold leading-normal tracking-[0.015em]">
+                    <span class="relative flex h-2 w-2">
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <span class="truncate">Live</span>
+                </button>
+            </header>
+            <div class="flex flex-1">
+                <aside class="flex w-64 flex-col border-r border-solid border-white/10 p-4">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col px-3 pt-2">
+                            <p class="text-sm font-normal leading-normal text-gray-500 dark:text-[#9cb2ba]">Menu</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <a class="flex items-center gap-3 rounded-lg px-3 py-2 {% if request.path == '/' %}bg-primary/20 text-primary{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors duration-200"
+                                href="/">
+                                <span
+                                    class="material-symbols-outlined {% if request.path == '/' %}fill{% endif %}">data_usage</span>
+                                <p class="text-sm font-medium leading-normal">Overview</p>
+                            </a>
+                            <a class="flex items-center gap-3 rounded-lg px-3 py-2 {% if request.path == '/traffic-forecast' %}bg-primary/20 text-primary{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors duration-200"
+                                href="/traffic-forecast">
+                                <span
+                                    class="material-symbols-outlined {% if request.path == '/traffic-forecast' %}fill{% endif %}">insights</span>
+                                <p class="text-sm font-medium leading-normal">Traffic Forecast</p>
+                            </a>
+                            <a class="flex items-center gap-3 rounded-lg px-3 py-2 {% if request.path == '/load-balancing' %}bg-primary/20 text-primary{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors duration-200"
+                                href="/load-balancing">
+                                <span
+                                    class="material-symbols-outlined {% if request.path == '/load-balancing' %}fill{% endif %}">shuffle</span>
+                                <p class="text-sm font-medium leading-normal">Load Balancing</p>
+                            </a>
+                            <a class="flex items-center gap-3 rounded-lg px-3 py-2 {% if request.path == '/performance-comparison' %}bg-primary/20 text-primary{% else %}text-gray-400 hover:bg-white/5 hover:text-white{% endif %} transition-colors duration-200"
+                                href="/performance-comparison">
+                                <span
+                                    class="material-symbols-outlined {% if request.path == '/performance-comparison' %}fill{% endif %}">bar_chart</span>
+                                <p class="text-sm font-medium leading-normal">Performance Comparison</p>
+                            </a>
+                        </div>
+                    </div>
+                </aside>
+                <main class="flex-1 overflow-y-auto p-6 md:p-8">
+                    {% block content %}{% endblock %}
+                </main>
+            </div>
+        </div>
+        <footer class="w-full border-t border-solid border-white/10 text-center py-4">
+            <p class="text-sm text-gray-500">Developed by Raviraj &amp; Devika</p>
+        </footer>
+    </div>
+
+    <script>
+        const socket = io();
+        const API_BASE = window.location.origin;
+
+        // Update metrics from WebSocket
+        socket.on('metrics_update', (data) => {
+            if (typeof updateMetrics === 'function') {
+                updateMetrics(data);
+            }
+        });
+
+        // Fetch initial metrics
+        async function fetchMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/metrics`);
+                const data = await response.json();
+                if (typeof updateMetrics === 'function') {
+                    updateMetrics(data);
+                }
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+            }
+        }
+
+        // Initial load
+        fetchMetrics();
+        setInterval(fetchMetrics, 5000); // Update every 5 seconds
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

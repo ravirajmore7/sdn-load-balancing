@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Overview - SDN Dashboard{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl">
+    <div class="flex flex-wrap gap-4">
+        <div class="flex min-w-[200px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#1A2233]/50 border border-white/10">
+            <p class="text-base font-medium leading-normal text-gray-400">Total Network Throughput</p>
+            <p id="throughput" class="text-3xl font-bold leading-tight tracking-tight text-white">1.2 Tbps</p>
+            <div class="flex items-center gap-1 text-green-400">
+                <span class="material-symbols-outlined text-base">trending_up</span>
+                <p id="throughputChange" class="text-sm font-medium leading-normal">+5.2%</p>
+            </div>
+        </div>
+        <div class="flex min-w-[200px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#1A2233]/50 border border-white/10">
+            <p class="text-base font-medium leading-normal text-gray-400">Average Latency</p>
+            <p id="latency" class="text-3xl font-bold leading-tight tracking-tight text-white">12ms</p>
+            <div class="flex items-center gap-1 text-green-400">
+                <span class="material-symbols-outlined text-base">trending_up</span>
+                <p id="latencyChange" class="text-sm font-medium leading-normal">+1.1%</p>
+            </div>
+        </div>
+        <div class="flex min-w-[200px] flex-1 flex-col gap-2 rounded-lg p-6 bg-[#1A2233]/50 border border-white/10">
+            <p class="text-base font-medium leading-normal text-gray-400">Packet Loss</p>
+            <p id="packetLoss" class="text-3xl font-bold leading-tight tracking-tight text-white">0.05%</p>
+            <div class="flex items-center gap-1 text-red-400">
+                <span class="material-symbols-outlined text-base">trending_down</span>
+                <p id="packetLossChange" class="text-sm font-medium leading-normal">-0.01%</p>
+            </div>
+        </div>
+    </div>
+    <div class="mt-8 flex flex-col gap-6 lg:flex-row">
+        <div class="flex flex-col flex-1 gap-4">
+            <h2 class="text-xl font-bold leading-tight tracking-[-0.015em] text-white">Network Topology (Fat-Tree)</h2>
+            <div class="flex w-full grow rounded-lg bg-[#1A2233]/50 border border-white/10 p-4 aspect-video">
+                <div class="w-full h-full bg-center bg-no-repeat bg-contain"
+                    data-alt="A diagram of a fat-tree network topology"
+                    style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCghnOoVRrHUHINYRZJskmFipsr5WY2obi7GtlILjvyy1IZBZ9cbwnLfl61a_-2BSfMoatipsHAiDNWAKp6qxfE7SFF6-0UIZlr7aybqL7dvXKtHoDMpZyvV3V5OFOQDvfeCIpOQU_52-OAwjNP1HqUHHPQPbFatBkTjP6KvvFrLmiOACT1HLTLQHw-b60RdhV8l6LxjS0HkM7WD68wZJF0qb6zr56DIPsqpxD5cMVwzNhUCs4aqr7O1oEloawyS2ATaC_vkd8r_cY"); filter: brightness(0.8) contrast(1.2);'>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col lg:w-72 gap-6">
+            <h2 class="text-xl font-bold leading-tight tracking-[-0.015em] text-white">Controls</h2>
+            <div class="flex flex-col gap-4 rounded-lg p-6 bg-[#1A2233]/50 border border-white/10">
+                <p class="text-base text-gray-300">Initiate a real-time simulation of network traffic to test AI load
+                    balancing algorithms.</p>
+                <button id="startSimBtn"
+                    class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-[#111618] text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors duration-200">
+                    <span class="material-symbols-outlined mr-2">play_circle</span>
+                    <span class="truncate">Start Simulation</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateMetrics(data) {
+        document.getElementById('throughput').textContent = `${data.throughput.toFixed(2)} Tbps`;
+        document.getElementById('latency').textContent = `${data.latency.toFixed(0)}ms`;
+        document.getElementById('packetLoss').textContent = `${data.packet_loss.toFixed(2)}%`;
+    }
+
+    // Start simulation
+    document.getElementById('startSimBtn').addEventListener('click', async () => {
+        try {
+            const response = await fetch(`${API_BASE}/api/simulation/start`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            alert('Simulation started!');
+        } catch (error) {
+            console.error('Error starting simulation:', error);
+        }
+    });
+</script>
+{% endblock %}

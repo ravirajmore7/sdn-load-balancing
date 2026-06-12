@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI-Powered SDN Load Balancing Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#0db9f2",
+          "background-light": "#f5f8f8",
+          "background-dark": "#101e22",
+        },
+        fontFamily: {
+          "display": ["Space Grotesk", "sans-serif"]
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Space Grotesk', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24 }
+  .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+  .hidden-section { display: none; }
+</style>
+</head>
+
+<body class="bg-background-dark text-gray-200 font-display">
+
+<!-- Sidebar -->
+<div class="flex h-screen">
+  <aside class="w-64 bg-[#111618] border-r border-white/10 p-4 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center gap-3 px-3 py-2 mb-6">
+        <div class="text-primary size-6">
+          <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path clip-rule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fill-rule="evenodd"></path>
+            <path clip-rule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fill-rule="evenodd"></path>
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-white">AI-SDN Dashboard</h2>
+      </div>
+      <nav class="flex flex-col gap-2">
+        <button onclick="showSection('overview')" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 active-section text-white">
+          <span class="material-symbols-outlined fill">data_usage</span>Overview
+        </button>
+        <button onclick="showSection('forecast')" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-gray-400">
+          <span class="material-symbols-outlined">insights</span>Traffic Forecast
+        </button>
+        <button onclick="showSection('balancing')" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-gray-400">
+          <span class="material-symbols-outlined">shuffle</span>Load Balancing
+        </button>
+        <button onclick="showSection('comparison')" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-gray-400">
+          <span class="material-symbols-outlined">bar_chart</span>Performance Comparison
+        </button>
+      </nav>
+    </div>
+    <footer class="border-t border-white/10 pt-4 text-center text-gray-500 text-sm">
+      Developed by RAVIRAJ AND DEVIKA
+    </footer>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-y-auto p-8">
+    <!-- Overview Section -->
+    <section id="overview" class="section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Overview</h1>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-sm">Total Network Throughput</p>
+          <h2 class="text-3xl font-bold text-white">1.2 Tbps</h2>
+        </div>
+        <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-sm">Average Latency</p>
+          <h2 class="text-3xl font-bold text-white">12 ms</h2>
+        </div>
+        <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-sm">Packet Loss</p>
+          <h2 class="text-3xl font-bold text-white">0.05%</h2>
+        </div>
+      </div>
+      <div class="mt-8">
+        <h2 class="text-xl font-semibold text-white mb-2">Network Topology</h2>
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCghnOoVRrHUHINYRZJskmFipsr5WY2obi7GtlILjvyy1IZBZ9cbwnLfl61a_-2BSfMoatipsHAiDNWAKp6qxfE7SFF6-0UIZlr7aybqL7dvXKtHoDMpZyvV3V5OFOQDvfeCIpOQU_52-OAwjNP1HqUHHPQPbFatBkTjP6KvvFrLmiOACT1HLTLQHw-b60RdhV8l6LxjS0HkM7WD68wZJF0qb6zr56DIPsqpxD5cMVwzNhUCs4aqr7O1oEloawyS2ATaC_vkd8r_cY" class="rounded-lg w-full border border-white/10">
+      </div>
+    </section>
+
+    <!-- Forecast Section -->
+    <section id="forecast" class="section hidden-section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Traffic Forecast</h1>
+      <p class="text-gray-400 mb-6">Visualize actual vs. predicted traffic loads using Temporal Fusion Transformer (TFT).</p>
+      <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <svg fill="none" width="100%" height="300" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+          <line stroke="#283539" x1="0" x2="800" y1="100" y2="100"></line>
+          <line stroke="#283539" x1="0" x2="800" y1="200" y2="200"></line>
+          <path d="M50 200 C 150 150, 250 250, 350 200 S 550 150, 750 180" stroke="#4A90E2" stroke-width="2.5"></path>
+          <path d="M50 210 C 150 160, 250 260, 350 210 S 550 160, 750 190" stroke="#0db9f2" stroke-width="2.5"></path>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Load Balancing Section -->
+    <section id="balancing" class="section hidden-section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Load Balancing</h1>
+      <p class="text-gray-400 mb-4">Dynamic traffic distribution monitored using Deep Q-Network (DQN) algorithm.</p>
+      <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <h2 class="text-lg font-semibold mb-2 text-white">DQN Model Status</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-[#223f49]/60 p-4 rounded-lg text-center">
+            <p class="text-gray-400 text-sm">Episode</p><h3 class="text-2xl font-bold text-white">1,482</h3>
+          </div>
+          <div class="bg-[#223f49]/60 p-4 rounded-lg text-center">
+            <p class="text-gray-400 text-sm">Reward</p><h3 class="text-2xl font-bold text-white">0.987</h3>
+          </div>
+          <div class="bg-[#223f49]/60 p-4 rounded-lg text-center">
+            <p class="text-gray-400 text-sm">Epsilon</p><h3 class="text-2xl font-bold text-white">0.05</h3>
+          </div>
+          <div class="bg-primary/20 p-4 rounded-lg text-center border border-primary">
+            <p class="text-primary text-sm">Chosen Link</p><h3 class="text-2xl font-bold text-primary">Link 2</h3>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Performance Comparison Section -->
+    <section id="comparison" class="section hidden-section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Performance Comparison</h1>
+      <p class="text-gray-400 mb-4">Compare Round Robin (RR), Weighted RR, and DQN algorithms.</p>
+      <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead class="text-gray-400 border-b border-white/10">
+            <tr><th class="py-2 px-3">Metric</th><th>RR</th><th>WRR</th><th class="text-primary">DQN</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="py-2 px-3">Throughput (Mbps)</td><td>980</td><td>1085</td><td class="text-primary font-bold">1250</td></tr>
+            <tr><td class="py-2 px-3">Latency (ms)</td><td>45</td><td>32</td><td class="text-primary font-bold">25</td></tr>
+            <tr><td class="py-2 px-3">Packet Loss (%)</td><td>0.5</td><td>0.3</td><td class="text-primary font-bold">0.1</td></tr>
+            <tr><td class="py-2 px-3">Jitter (ms)</td><td>12</td><td>8</td><td class="text-primary font-bold">4</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.add('hidden-section'));
+    document.getElementById(id).classList.remove('hidden-section');
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('text-white', 'bg-white/10'));
+    event.target.closest('button').classList.add('text-white', 'bg-white/10');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Load Balancing - SDN Dashboard{% endblock %}
+
+{% block content %}
+<!-- Notification Container -->
+<div id="notificationContainer" class="fixed top-20 right-6 z-50 flex flex-col gap-2 max-w-md">
+    <!-- Notifications will be dynamically inserted here -->
+</div>
+
+<div class="flex flex-wrap justify-between gap-3 mb-6">
+    <p class="text-white text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">Real-Time Traffic Distribution
+    </p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 flex flex-col gap-6">
+        <div class="flex min-w-72 flex-1 flex-col gap-2 rounded-lg border border-[#315a68] p-6 bg-[#1a2c32]/50">
+            <div class="flex justify-between items-center">
+                <p class="text-white text-base font-medium leading-normal">Traffic Distribution</p>
+                <div class="flex gap-4 items-center text-xs text-[#90bccb] flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-cyan-400"></div><span>Link 1 (S1-S2)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-purple-400"></div><span>Link 2 (S1-S3)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-green-400"></div><span>Link 3 (S1-S4)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-yellow-400"></div><span>Link 4 (S2-S5)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-orange-400"></div><span>Link 5 (S3-S6)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-pink-400"></div><span>Link 6 (S4-S7)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-indigo-400"></div><span>Link 7 (S5-S8)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-0.5 bg-teal-400"></div><span>Link 8 (S6-S7)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex min-h-[300px] flex-1 flex-col justify-center">
+                <svg id="trafficChart" height="100%" preserveaspectratio="xMidYMid meet" viewbox="0 0 800 300"
+                    width="100%" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+        </div>
+    </div>
+    <div class="lg:col-span-1">
+        <div class="bg-[#1a2c32]/50 rounded-lg border border-[#315a68] p-6 h-full flex flex-col">
+            <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] mb-4">DQN Model Status</h2>
+            <div class="flex-grow grid grid-cols-2 gap-4">
+                <div class="bg-[#223f49]/60 p-4 rounded-lg flex flex-col justify-center">
+                    <p class="text-sm text-[#90bccb]">Current Episode</p>
+                    <p id="dqnEpisode" class="text-2xl font-bold text-white">1,482</p>
+                </div>
+                <div class="bg-[#223f49]/60 p-4 rounded-lg flex flex-col justify-center">
+                    <p class="text-sm text-[#90bccb]">Reward</p>
+                    <p id="dqnReward" class="text-2xl font-bold text-white">0.987</p>
+                </div>
+                <div class="bg-[#223f49]/60 p-4 rounded-lg flex flex-col justify-center">
+                    <p class="text-sm text-[#90bccb]">Epsilon</p>
+                    <p id="dqnEpsilon" class="text-2xl font-bold text-white">0.05</p>
+                </div>
+                <div class="bg-primary/20 p-4 rounded-lg flex flex-col justify-center border border-primary">
+                    <p class="text-sm text-primary/80">Chosen Link</p>
+                    <p id="dqnLink" class="text-2xl font-bold text-primary">Link 2</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="mt-6">
+    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Per-Link Bandwidth
+        Utilization</h2>
+    <div id="linkUtilization" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Will be populated by JavaScript -->
+    </div>
+</div>
+<div class="mt-6">
+    <h2 class="text-white text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Server Status</h2>
+    <div id="serverStatus" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        <!-- Will be populated by JavaScript -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_BASE = window.location.origin;
+
+    async function loadDQNStatus() {
+        try {
+            const response = await fetch(`${API_BASE}/api/load-balancing/status`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('DQN status data loaded:', data);
+            if (data) {
+                document.getElementById('dqnEpisode').textContent = (data.episode || 1482).toLocaleString();
+                document.getElementById('dqnReward').textContent = (data.reward || 0.987).toFixed(3);
+                document.getElementById('dqnEpsilon').textContent = (data.epsilon || 0.05).toFixed(2);
+                document.getElementById('dqnLink').textContent = data.chosen_link || 'Link 2';
+            }
+        } catch (error) {
+            console.error('Error loading DQN status:', error);
+        }
+    }
+
+    async function loadTrafficDistribution() {
+        try {
+            const response = await fetch(`${API_BASE}/api/load-balancing/traffic-distribution`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Traffic distribution data loaded:', data);
+            if (data && data.links) {
+                drawTrafficChart(data);
+            } else {
+                console.error('Invalid traffic distribution data format:', data);
+            }
+        } catch (error) {
+            console.error('Error loading traffic distribution:', error);
+            // Draw empty chart on error
+            drawTrafficChart({ links: [] });
+        }
+    }
+
+    function drawTrafficChart(data) {
+        const svg = document.getElementById('trafficChart');
+        svg.innerHTML = '';
+
+        const width = 800;
+        const height = 300;
+        const padding = { top: 20, right: 20, bottom: 40, left: 60 };
+
+        // Draw grid
+        for (let i = 0; i <= 4; i++) {
+            const y = padding.top + (height - padding.top - padding.bottom) / 4 * i;
+            svg.innerHTML += `<line stroke="#223f49" stroke-width="1" x1="${padding.left}" x2="${width - padding.right}" y1="${y}" y2="${y}"></line>`;
+        }
+
+        // Draw traffic paths based on actual data
+        const colors = ['#6366f1', '#a855f7', '#0db9f2', '#fbbf24', '#f97316', '#ec4899', '#6366f1', '#14b8a6'];
+        const links = data.links || [];
+        
+        if (links.length === 0) {
+            svg.innerHTML += `<text x="${width/2}" y="${height/2}" text-anchor="middle" fill="#90bccb" font-size="16">No traffic data available</text>`;
+            return;
+        }
+        
+        const maxTraffic = Math.max(...links.map(l => l.traffic || 0), 20);
+
+        // Add glow filter for DQN path first
+        svg.innerHTML = `<defs><filter height="200%" id="glow" width="200%" x="-50%" y="-50%"><fegaussianblur result="coloredBlur" stddeviation="4"></fegaussianblur><femerge><femergenode in="coloredBlur"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge></filter></defs>`;
+
+        links.forEach((link, linkIdx) => {
+            if (linkIdx >= 8) return; // Limit to 8 links
+
+            // Generate path based on traffic value
+            const normalizedTraffic = Math.min(1, Math.max(0.1, (link.traffic || 0) / maxTraffic));
+            const baseY = height - padding.bottom - normalizedTraffic * 150;
+            let path = `M ${padding.left} ${baseY}`;
+
+            // Generate 7 points for the line
+            for (let i = 1; i <= 7; i++) {
+                const x = padding.left + (width - padding.left - padding.right) / 7 * i;
+                // Add some variation but keep it realistic
+                const variation = (Math.sin(i * 0.5) * 20) + (Math.random() - 0.5) * 15;
+                const y = Math.max(padding.top, Math.min(height - padding.bottom, baseY + variation));
+                path += ` L ${x} ${y}`;
+            }
+
+            const isSelected = link.selected || false;
+            const strokeWidth = isSelected ? '3.5' : '2';
+            const filter = isSelected ? 'filter="url(#glow)"' : '';
+            const opacity = isSelected ? '1' : '0.8';
+
+            svg.innerHTML += `<path d="${path}" fill="none" opacity="${opacity}" stroke="${colors[linkIdx % colors.length]}" stroke-width="${strokeWidth}" ${filter}></path>`;
+        });
+
+
+        // X-axis labels
+        const labels = ['-60s', '-40s', '-20s', 'Now'];
+        labels.forEach((label, idx) => {
+            const x = padding.left + (width - padding.left - padding.right) / 3 * idx;
+            svg.innerHTML += `<text fill="#90bccb" font-family="Space Grotesk" font-size="12" text-anchor="middle" x="${x}" y="${height - padding.bottom + 20}">${label}</text>`;
+        });
+    }
+
+    async function loadLinkUtilization() {
+        try {
+            const response = await fetch(`${API_BASE}/api/load-balancing/link-utilization`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Link utilization data loaded:', data);
+            if (data && data.links) {
+                renderLinkUtilization(data.links);
+            } else {
+                console.error('Invalid link utilization data format:', data);
+            }
+        } catch (error) {
+            console.error('Error loading link utilization:', error);
+        }
+    }
+
+    function renderLinkUtilization(links) {
+        const container = document.getElementById('linkUtilization');
+        container.innerHTML = '';
+
+        const colors = ['#0db9f2', '#fbbf24', '#ef4444', '#22c55e', '#a855f7', '#ec4899', '#6366f1', '#14b8a6'];
+        links.forEach((link, idx) => {
+            const color = colors[idx % colors.length];
+            const dashArray = `${link.utilization}, 100`;
+            const utilizationColor = link.utilization > 80 ? 'text-red-400' : link.utilization > 60 ? 'text-yellow-400' : 'text-green-400';
+
+            container.innerHTML += `
+                <div class="bg-[#1a2c32]/50 rounded-lg border border-[#315a68] p-4 flex flex-col items-center gap-2">
+                    <p class="text-white font-medium text-sm text-center">${link.name}</p>
+                    <div class="relative w-40 h-40">
+                        <svg class="w-full h-full" viewbox="0 0 36 36">
+                            <path class="text-[#223f49]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="100, 100" stroke-width="3"></path>
+                            <path style="stroke: ${color};" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="${dashArray}" stroke-linecap="round" stroke-width="3"></path>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-3xl font-bold ${utilizationColor}">${link.utilization}%</span>
+                            <span class="text-sm text-[#90bccb]">${link.bandwidth} Gbps</span>
+                            <span class="text-xs text-[#90bccb]">/${link.capacity || 10} Gbps</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Notification system
+    const notificationContainer = document.getElementById('notificationContainer');
+    const activeNotifications = new Set();
+
+    function showNotification(notification) {
+        // Avoid duplicate notifications
+        const notificationId = `${notification.type}-${notification.timestamp}`;
+        if (activeNotifications.has(notificationId)) {
+            return;
+        }
+        activeNotifications.add(notificationId);
+
+        // Determine notification style based on type
+        let bgColor = 'bg-blue-500/90';
+        let icon = '🔔';
+        if (notification.type === 'link_change') {
+            bgColor = 'bg-primary/90';
+            icon = '🔄';
+        } else if (notification.type === 'high_utilization') {
+            bgColor = 'bg-yellow-500/90';
+            icon = '⚠️';
+        } else if (notification.type === 'utilization_recovered') {
+            bgColor = 'bg-green-500/90';
+            icon = '✅';
+        } else if (notification.type === 'network_change') {
+            bgColor = 'bg-purple-500/90';
+            icon = '🌐';
+        }
+
+        const notificationEl = document.createElement('div');
+        notificationEl.className = `${bgColor} text-white p-4 rounded-lg shadow-lg border border-white/20 animate-slide-in-right`;
+        notificationEl.innerHTML = `
+            <div class="flex items-start gap-3">
+                <span class="text-2xl">${icon}</span>
+                <div class="flex-1">
+                    <p class="font-medium text-sm">${notification.message}</p>
+                    <p class="text-xs text-white/70 mt-1">${new Date(notification.timestamp).toLocaleTimeString()}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-white/70 hover:text-white">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+        `;
+
+        notificationContainer.appendChild(notificationEl);
+
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+            if (notificationEl.parentNode) {
+                notificationEl.style.animation = 'slide-out-right 0.3s ease-out';
+                setTimeout(() => {
+                    notificationEl.remove();
+                    activeNotifications.delete(notificationId);
+                }, 300);
+            }
+        }, 8000);
+    }
+
+    // WebSocket connection for real-time notifications
+    // Note: Socket.io is already initialized in base.html
+    socket.on('load_balancing_notification', (notification) => {
+        showNotification(notification);
+    });
+
+    async function loadServerStatus() {
+        try {
+            const response = await fetch(`${API_BASE}/api/servers`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Server status data loaded:', data);
+            if (data && data.servers) {
+                renderServerStatus(data.servers);
+            } else {
+                console.error('Invalid server status data format:', data);
+            }
+        } catch (error) {
+            console.error('Error loading server status:', error);
+        }
+    }
+
+    function renderServerStatus(servers) {
+        const container = document.getElementById('serverStatus');
+        container.innerHTML = '';
+
+        servers.forEach(server => {
+            const loadColor = server.load > 80 ? 'text-red-400' : server.load > 60 ? 'text-yellow-400' : 'text-green-400';
+            const statusColor = server.status === 'overloaded' ? 'border-red-500' : 'border-green-500';
+
+            container.innerHTML += `
+                <div class="bg-[#1a2c32]/50 rounded-lg border ${statusColor} p-3 flex flex-col items-center gap-2">
+                    <p class="text-white font-medium text-sm text-center">${server.name}</p>
+                    <div class="flex flex-col items-center">
+                        <span class="text-2xl font-bold ${loadColor}">${server.load}%</span>
+                        <span class="text-xs text-[#90bccb]">${server.status}</span>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Load data on page load
+    function initializePage() {
+        loadDQNStatus();
+        loadTrafficDistribution();
+        loadLinkUtilization();
+        loadServerStatus();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+        initializePage();
+    }
+
+    // Refresh data periodically
+    setInterval(loadDQNStatus, 5000);
+    setInterval(loadTrafficDistribution, 10000);
+    setInterval(loadLinkUtilization, 10000);
+    setInterval(loadServerStatus, 15000);
+
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slide-in-right {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slide-out-right {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        .animate-slide-in-right {
+            animation: slide-in-right 0.3s ease-out;
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

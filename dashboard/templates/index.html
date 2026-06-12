@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI-Powered SDN Load Balancing Dashboard</title>
+<link rel="icon" href="data:,"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#0db9f2",
+          "background-light": "#f5f8f8",
+          "background-dark": "#101e22",
+        },
+        fontFamily: {
+          "display": ["Space Grotesk", "sans-serif"]
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: "Space Grotesk", sans-serif; }
+  .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+  .material-symbols-outlined.fill { font-variation-settings: "FILL" 1; }
+  .hidden-section { display: none; }
+  .control-active { background: rgba(13, 185, 242, 0.24); border-color: #0db9f2; color: #67d8ff; }
+  .chart-grid { stroke: #314249; stroke-width: 1; }
+</style>
+</head>
+
+<body class="bg-background-dark text-gray-200 font-display">
+<div class="flex h-screen">
+  <aside class="w-64 shrink-0 bg-[#111618] border-r border-white/10 p-4 flex flex-col justify-between">
+    <div>
+      <div class="flex items-center gap-3 px-3 py-2 mb-6">
+        <div class="text-primary size-6">
+          <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path clip-rule="evenodd" d="M24 18.4228L42 11.475V34.3663C42 34.7796 41.7457 35.1504 41.3601 35.2992L24 42V18.4228Z" fill="currentColor" fill-rule="evenodd"></path>
+            <path clip-rule="evenodd" d="M24 8.18819L33.4123 11.574L24 15.2071L14.5877 11.574L24 8.18819ZM9 15.8487L21 20.4805V37.6263L9 32.9945V15.8487ZM27 37.6263V20.4805L39 15.8487V32.9945L27 37.6263ZM25.354 2.29885C24.4788 1.98402 23.5212 1.98402 22.646 2.29885L4.98454 8.65208C3.7939 9.08038 3 10.2097 3 11.475V34.3663C3 36.0196 4.01719 37.5026 5.55962 38.098L22.9197 44.7987C23.6149 45.0671 24.3851 45.0671 25.0803 44.7987L42.4404 38.098C43.9828 37.5026 45 36.0196 45 34.3663V11.475C45 10.2097 44.2061 9.08038 43.0155 8.65208L25.354 2.29885Z" fill="currentColor" fill-rule="evenodd"></path>
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-white">AI-SDN Dashboard</h2>
+      </div>
+      <nav class="flex flex-col gap-2">
+        <button onclick="showSection('overview', this)" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 text-white">
+          <span class="material-symbols-outlined fill">data_usage</span>Overview
+        </button>
+        <button onclick="showSection('forecast', this)" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-gray-400">
+          <span class="material-symbols-outlined">insights</span>Traffic Forecast
+        </button>
+        <button onclick="showSection('balancing', this)" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-gray-400">
+          <span class="material-symbols-outlined">shuffle</span>Load Balancing
+        </button>
+        <button onclick="showSection('comparison', this)" class="nav-btn flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 text-gray-400">
+          <span class="material-symbols-outlined">bar_chart</span>Performance Comparison
+        </button>
+      </nav>
+    </div>
+    <footer class="border-t border-white/10 pt-4 text-center text-gray-500 text-sm">
+      Developed by G14 AMG2025-2026
+    </footer>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto p-8">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#15252a] px-4 py-3 text-sm">
+      <div class="flex flex-wrap items-center gap-3">
+        <span id="connection-status" class="text-amber-300">Waiting for metrics...</span>
+        <span class="text-gray-500">|</span>
+        <span class="text-gray-400">Source: <strong id="data-source" class="text-white">waiting</strong></span>
+      </div>
+      <span class="text-gray-400">Last update: <strong id="last-updated" class="text-white">waiting</strong></span>
+    </div>
+
+    <section id="overview" class="section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Overview</h1>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-sm">Total Network Throughput</p>
+          <h2 id="total-throughput" class="text-3xl font-bold text-white">Waiting...</h2>
+        </div>
+        <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-sm">Average Latency</p>
+          <h2 id="average-latency" class="text-3xl font-bold text-white">Waiting...</h2>
+        </div>
+        <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-sm">Packet Loss</p>
+          <h2 id="packet-loss" class="text-3xl font-bold text-white">Waiting...</h2>
+        </div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-xs">Routing Mode</p><p id="routing-mode" class="mt-1 font-bold text-primary uppercase">waiting</p>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-xs">Traffic Type</p><p id="traffic-type" class="mt-1 font-bold text-white">waiting</p>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-xs">Traffic Status</p><p id="traffic-running" class="mt-1 font-bold text-white">waiting</p>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-xs">Running Mode</p><p id="running-mode" class="mt-1 font-bold text-white">waiting</p>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-xs">Active Flows</p><p id="active-flows" class="mt-1 font-bold text-white">0</p>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-gray-400 text-xs">Congested Links</p><p id="congested-links" class="mt-1 font-bold text-white">0</p>
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <h2 class="text-xl font-semibold text-white mb-2">Network Topology</h2>
+        <img alt="SDN network topology" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCghnOoVRrHUHINYRZJskmFipsr5WY2obi7GtlILjvyy1IZBZ9cbwnLfl61a_-2BSfMoatipsHAiDNWAKp6qxfE7SFF6-0UIZlr7aybqL7dvXKtHoDMpZyvV3V5OFOQDvfeCIpOQU_52-OAwjNP1HqUHHPQPbFatBkTjP6KvvFrLmiOACT1HLTLQHw-b60RdhV8l6LxjS0HkM7WD68wZJF0qb6zr56DIPsqpxD5cMVwzNhUCs4aqr7O1oEloawyS2ATaC_vkd8r_cY" class="rounded-lg w-full border border-white/10"/>
+        <div class="mt-3 rounded-lg border border-primary/30 bg-primary/10 p-3">
+          <p class="text-xs uppercase tracking-wide text-primary">Selected Path</p>
+          <p id="selected-path" class="mt-1 break-words text-sm text-white">Waiting for metrics...</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="forecast" class="section hidden-section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Traffic Forecast</h1>
+      <p class="text-gray-400 mb-6">Live actual traffic and a simple rolling projection. The SVG updates locally with no chart dependency.</p>
+      <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <div class="flex flex-wrap gap-4 text-xs mb-3">
+          <span class="text-blue-300">Actual Throughput</span>
+          <span class="text-primary">Rolling Projection</span>
+        </div>
+        <svg fill="none" width="100%" height="300" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+          <line class="chart-grid" x1="20" x2="780" y1="50" y2="50"></line>
+          <line class="chart-grid" x1="20" x2="780" y1="150" y2="150"></line>
+          <line class="chart-grid" x1="20" x2="780" y1="250" y2="250"></line>
+          <polyline id="forecast-actual-line" points="" stroke="#4A90E2" stroke-width="3" fill="none"></polyline>
+          <polyline id="forecast-predicted-line" points="" stroke="#0db9f2" stroke-width="3" fill="none"></polyline>
+        </svg>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-sm font-semibold text-white">Throughput History</p>
+          <svg width="100%" height="120" viewBox="0 0 320 120"><polyline id="throughput-line" points="" stroke="#0db9f2" stroke-width="3" fill="none"></polyline></svg>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-sm font-semibold text-white">Latency History</p>
+          <svg width="100%" height="120" viewBox="0 0 320 120"><polyline id="latency-line" points="" stroke="#a78bfa" stroke-width="3" fill="none"></polyline></svg>
+        </div>
+        <div class="bg-[#1A2233]/70 p-4 rounded-lg border border-white/10">
+          <p class="text-sm font-semibold text-white">Packet Loss History</p>
+          <svg width="100%" height="120" viewBox="0 0 320 120"><polyline id="loss-line" points="" stroke="#fb7185" stroke-width="3" fill="none"></polyline></svg>
+        </div>
+      </div>
+    </section>
+
+    <section id="balancing" class="section hidden-section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Load Balancing</h1>
+      <p class="text-gray-400 mb-4">Dynamic traffic distribution monitored using Deep Q-Network (DQN) algorithm.</p>
+      <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <h2 class="text-lg font-semibold mb-2 text-white">DQN Model Status</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-[#223f49]/60 p-4 rounded-lg text-center">
+            <p class="text-gray-400 text-sm">Episode</p><h3 id="dqn-episode" class="text-2xl font-bold text-white">0</h3>
+          </div>
+          <div class="bg-[#223f49]/60 p-4 rounded-lg text-center">
+            <p class="text-gray-400 text-sm">Reward</p><h3 id="dqn-reward" class="text-2xl font-bold text-white">0</h3>
+          </div>
+          <div class="bg-[#223f49]/60 p-4 rounded-lg text-center">
+            <p class="text-gray-400 text-sm">Epsilon</p><h3 id="dqn-epsilon" class="text-2xl font-bold text-white">0</h3>
+          </div>
+          <div class="bg-primary/20 p-4 rounded-lg text-center border border-primary">
+            <p class="text-primary text-sm">Chosen Link</p><h3 id="dqn-chosen-link" class="text-xl font-bold text-primary">Waiting...</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <h2 class="text-lg font-semibold text-white">Dashboard Controls</h2>
+        <p id="command-status" class="mt-1 text-sm text-gray-400">Commands update <code>data/live/control.json</code>.</p>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <button data-mode="rr" onclick="setMode('rr')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">RR Mode</button>
+          <button data-mode="wrr" onclick="setMode('wrr')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">WRR Mode</button>
+          <button data-mode="ai" onclick="setMode('ai')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">AI / DQN Mode</button>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-3">
+          <button data-traffic="normal" onclick="startTraffic('normal')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">Normal Traffic</button>
+          <button data-traffic="high_load" onclick="startTraffic('high_load')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">High Load Traffic</button>
+          <button data-traffic="burst" onclick="startTraffic('burst')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">Burst Traffic</button>
+          <button data-traffic="random" onclick="startTraffic('random')" class="rounded-lg border border-white/15 px-4 py-2 text-sm hover:border-primary">Random Traffic</button>
+          <button onclick="stopTraffic()" class="rounded-lg border border-red-400/60 px-4 py-2 text-sm text-red-300 hover:bg-red-400/10">Stop Traffic</button>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <h2 class="text-lg font-semibold text-white">Live Link Utilization</h2>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full min-w-[760px] text-left text-sm border-collapse">
+            <thead class="text-gray-400 border-b border-white/10">
+              <tr><th class="py-2 px-3">Link</th><th>Utilization %</th><th>Delay ms</th><th>Packet Loss %</th><th>Active Flows</th><th>Status</th></tr>
+            </thead>
+            <tbody id="links-table-body"><tr><td colspan="6" class="px-3 py-3 text-gray-500">Waiting for metrics...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-[#1A2233]/70 p-6 rounded-lg border border-white/10">
+        <h2 class="text-lg font-semibold text-white">Active Flows</h2>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-left text-sm border-collapse">
+            <thead class="text-gray-400 border-b border-white/10">
+              <tr><th class="py-2 px-3">Flow ID</th><th>Source</th><th>Destination</th><th>Protocol</th><th>Bandwidth Mbps</th><th>Throughput Mbps</th><th>Latency ms</th><th>Packet Loss %</th></tr>
+            </thead>
+            <tbody id="flows-table-body"><tr><td colspan="8" class="px-3 py-3 text-gray-500">Waiting for metrics...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="comparison" class="section hidden-section">
+      <h1 class="text-3xl font-bold mb-4 text-primary">Performance Comparison</h1>
+      <p class="text-gray-400 mb-4">Compare Round Robin (RR), Weighted RR, and DQN algorithms.</p>
+      <div class="bg-[#1A2233]/70 p-6 rounded-lg border border-white/10 overflow-x-auto">
+        <table class="w-full min-w-[560px] text-left text-sm border-collapse">
+          <thead class="text-gray-400 border-b border-white/10">
+            <tr><th class="py-2 px-3">Metric</th><th>RR</th><th>WRR</th><th class="text-primary">DQN / AI</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="py-2 px-3">Throughput (Mbps)</td><td id="rr-throughput">0</td><td id="wrr-throughput">0</td><td id="ai-throughput" class="text-primary font-bold">0</td></tr>
+            <tr><td class="py-2 px-3">Latency (ms)</td><td id="rr-latency">0</td><td id="wrr-latency">0</td><td id="ai-latency" class="text-primary font-bold">0</td></tr>
+            <tr><td class="py-2 px-3">Packet Loss (%)</td><td id="rr-loss">0</td><td id="wrr-loss">0</td><td id="ai-loss" class="text-primary font-bold">0</td></tr>
+            <tr><td class="py-2 px-3">Jitter (ms)</td><td id="rr-jitter">0</td><td id="wrr-jitter">0</td><td id="ai-jitter" class="text-primary font-bold">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const historyValues = { throughput: [], latency: [], loss: [] };
+
+  function showSection(id, button) {
+    document.querySelectorAll(".section").forEach(section => section.classList.add("hidden-section"));
+    document.getElementById(id).classList.remove("hidden-section");
+    document.querySelectorAll(".nav-btn").forEach(item => item.classList.remove("text-white", "bg-white/10"));
+    button.classList.add("text-white", "bg-white/10");
+  }
+
+  function text(id, value) {
+    document.getElementById(id).textContent = value;
+  }
+
+  function number(value, fallback = 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  function fixed(value, digits = 1) {
+    return number(value).toFixed(digits);
+  }
+
+  function escaped(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[character]));
+  }
+
+  function pushHistory(key, value) {
+    historyValues[key].push(number(value));
+    if (historyValues[key].length > 30) historyValues[key].shift();
+  }
+
+  function points(values, width, height, padding = 10) {
+    if (!values.length) return "";
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const spread = Math.max(maximum - minimum, 1);
+    const xStep = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
+    return values.map((value, index) => {
+      const x = padding + index * xStep;
+      const y = height - padding - ((value - minimum) / spread) * (height - padding * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+  }
+
+  function rollingProjection(values) {
+    return values.map((value, index) => {
+      const window = values.slice(Math.max(0, index - 2), index + 1);
+      return window.reduce((sum, item) => sum + item, 0) / window.length;
+    });
+  }
+
+  function renderCharts() {
+    document.getElementById("throughput-line").setAttribute("points", points(historyValues.throughput, 320, 120));
+    document.getElementById("latency-line").setAttribute("points", points(historyValues.latency, 320, 120));
+    document.getElementById("loss-line").setAttribute("points", points(historyValues.loss, 320, 120));
+    document.getElementById("forecast-actual-line").setAttribute("points", points(historyValues.throughput, 800, 300, 20));
+    document.getElementById("forecast-predicted-line").setAttribute("points", points(rollingProjection(historyValues.throughput), 800, 300, 20));
+  }
+
+  function renderLinks(links) {
+    const body = document.getElementById("links-table-body");
+    if (!Array.isArray(links) || !links.length) {
+      body.innerHTML = '<tr><td colspan="6" class="px-3 py-3 text-gray-500">No link metrics available.</td></tr>';
+      return;
+    }
+    body.innerHTML = links.map(link => {
+      const congested = Boolean(link.congested);
+      return `<tr class="border-b border-white/5">
+        <td class="px-3 py-2 text-white">${escaped(link.link_id)}</td>
+        <td>${fixed(link.utilization_percent)}%</td>
+        <td>${fixed(link.delay_ms)}</td>
+        <td>${fixed(link.packet_loss_percent, 2)}</td>
+        <td>${number(link.active_flows)}</td>
+        <td class="${congested ? "text-red-300" : "text-emerald-300"}">${congested ? "Congested" : "Healthy"}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderFlows(flows) {
+    const body = document.getElementById("flows-table-body");
+    if (!Array.isArray(flows) || !flows.length) {
+      body.innerHTML = '<tr><td colspan="8" class="px-3 py-3 text-gray-500">No active flows.</td></tr>';
+      return;
+    }
+    body.innerHTML = flows.map(flow => `<tr class="border-b border-white/5">
+      <td class="px-3 py-2 text-white">${escaped(flow.flow_id)}</td>
+      <td>${escaped(flow.src)}</td>
+      <td>${escaped(flow.dst)}</td>
+      <td>${escaped(flow.protocol)}</td>
+      <td>${fixed(flow.bandwidth_mbps)}</td>
+      <td>${fixed(flow.throughput_mbps)}</td>
+      <td>${fixed(flow.latency_ms)}</td>
+      <td>${fixed(flow.packet_loss_percent, 2)}</td>
+    </tr>`).join("");
+  }
+
+  function renderComparison(comparison) {
+    const modes = ["rr", "wrr", "ai"];
+    modes.forEach(mode => {
+      const metrics = comparison?.[mode] || {};
+      text(`${mode}-throughput`, fixed(metrics.throughput_mbps));
+      text(`${mode}-latency`, fixed(metrics.latency_ms));
+      text(`${mode}-loss`, fixed(metrics.packet_loss_percent, 2));
+      text(`${mode}-jitter`, fixed(metrics.jitter_ms));
+    });
+  }
+
+  function updateActiveControls(data) {
+    document.querySelectorAll("[data-mode]").forEach(button => {
+      button.classList.toggle("control-active", button.dataset.mode === data.routing_mode);
+    });
+    document.querySelectorAll("[data-traffic]").forEach(button => {
+      button.classList.toggle("control-active", Boolean(data.traffic_running) && button.dataset.traffic === data.traffic_type);
+    });
+  }
+
+  function renderMetrics(data) {
+    const dqn = data.dqn || {};
+    const path = Array.isArray(data.selected_path) ? data.selected_path.join(" -> ") : "No selected path";
+    text("total-throughput", `${fixed(data.total_throughput_mbps)} Mbps`);
+    text("average-latency", `${fixed(data.average_latency_ms)} ms`);
+    text("packet-loss", `${fixed(data.packet_loss_percent, 2)}%`);
+    text("routing-mode", data.routing_mode || "unknown");
+    text("traffic-type", data.traffic_type || "unknown");
+    text("traffic-running", data.traffic_running ? "Running" : "Stopped");
+    text("running-mode", data.running_mode || "unknown");
+    text("active-flows", number(data.active_flows));
+    text("congested-links", number(data.congested_links));
+    text("selected-path", path);
+    text("dqn-episode", number(dqn.episode).toLocaleString());
+    text("dqn-reward", fixed(dqn.reward, 3));
+    text("dqn-epsilon", fixed(dqn.epsilon, 3));
+    text("dqn-chosen-link", dqn.chosen_link || data.selected_link || "N/A");
+    text("data-source", data.data_source || "unknown");
+    text("last-updated", data.timestamp || new Date().toLocaleTimeString());
+    text("connection-status", data.data_source === "demo_fallback" ? "Connected: demo fallback data" : "Connected: live metrics file");
+    document.getElementById("connection-status").className = data.data_source === "demo_fallback" ? "text-amber-300" : "text-emerald-300";
+    pushHistory("throughput", data.total_throughput_mbps);
+    pushHistory("latency", data.average_latency_ms);
+    pushHistory("loss", data.packet_loss_percent);
+    renderCharts();
+    renderLinks(data.links);
+    renderFlows(data.flows);
+    renderComparison(data.comparison || {});
+    updateActiveControls(data);
+  }
+
+  async function refreshDashboard() {
+    try {
+      const response = await fetch("/api/metrics", { cache: "no-store" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      renderMetrics(await response.json());
+    } catch (error) {
+      text("connection-status", "Backend disconnected");
+      document.getElementById("connection-status").className = "text-red-300";
+      text("command-status", `Unable to reach Flask backend: ${error.message}`);
+    }
+  }
+
+  async function sendCommand(url, message) {
+    text("command-status", `${message}...`);
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+      text("command-status", `${message} complete.`);
+      await refreshDashboard();
+    } catch (error) {
+      text("command-status", `Command failed: ${error.message}`);
+    }
+  }
+
+  function setMode(mode) {
+    return sendCommand(`/api/set_mode?mode=${encodeURIComponent(mode)}`, `Switching routing mode to ${mode.toUpperCase()}`);
+  }
+
+  function startTraffic(type) {
+    return sendCommand(`/api/start_traffic?type=${encodeURIComponent(type)}`, `Starting ${type.replace("_", " ")} traffic`);
+  }
+
+  function stopTraffic() {
+    return sendCommand("/api/stop_traffic", "Stopping traffic");
+  }
+
+  refreshDashboard();
+  setInterval(refreshDashboard, 1000);
+</script>
+</body>
+</html>
